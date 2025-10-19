@@ -112,13 +112,12 @@ def train_model(
         valloader = DataLoader(valset, batch_size=16)
         testloader = DataLoader(test_subset, batch_size=16)
 
-        # Lightweight model (no pretrained weights)
-        model = models.resnet18(weights=None)
-        model.fc = nn.Linear(model.fc.in_features, 10)
-
         epochs = 1
         patience = 1
         device = "cpu"  # CI usually has no GPU
+
+        model = get_resnet50_model(num_classes=10).to(device)
+
 
     # -----------------------------#
     # FULL-MODE (for local training)
@@ -193,7 +192,7 @@ def train_model(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            torch.save(model.state_dict(), model_dir / "cifar-10-resnet50.pth")
+            torch.save(model.state_dict(), model_dir / "cifar_10_resnet50.pth")
         else:
             patience_counter += 1
             if patience_counter >= patience:
@@ -203,7 +202,7 @@ def train_model(
     # -----------------------------#
     # FINAL EVALUATION
     # -----------------------------#
-    model.load_state_dict(torch.load(model_dir / "cifar-10-resnet50.pth", map_location=device))
+    model.load_state_dict(torch.load(model_dir / "cifar_10_resnet50.pth", map_location=device))
     _, test_acc, preds, labels = evaluate(model, testloader, device)
     print(f"\nFinal Test Accuracy: {test_acc*100:.2f}%")
 

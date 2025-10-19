@@ -1,43 +1,54 @@
-# tests/test_train.py
 import json
-from pathlib import Path
-from src.train import train_model
+import torch
+import pytest
+from src.train import train_model, set_seed
 
 
-def test_training_pipeline_fast(tmp_path):
+@pytest.fixture(scope="module")
+def trained_model(tmp_path_factory):
     """
-    Fast integrity check for the training pipeline.
-    Uses a small subset of CIFAR-10 and runs for one epoch.
-    Ensures model, report, and confusion matrix artifacts are created.
+    Train the model once in fast_mode and return the model, accuracy, and tmp_path.
+    scope="module" ensures this runs only once per test module.
     """
-
-    # Use the pytest-provided tmp_path fixture as the output directory
+    tmp_path = tmp_path_factory.mktemp("train_output")
     model, acc = train_model(fast_mode=True, output_dir=tmp_path)
+    return {"model": model, "acc": acc, "tmp_path": tmp_path}
 
-    # Verify model object returned
-    assert model is not None, "Model should not be None"
 
-    # Define expected artifact paths
-    model_path = tmp_path / "models" / "cifar-10-resnet50.pth"
+def test_artifacts_created(trained_model):
+    tmp_path = trained_model["tmp_path"]
+
+    model_path = tmp_path / "models" / "cifar_10_resnet50.pth"
     report_path = tmp_path / "assets" / "test_report.json"
     cm_path = tmp_path / "assets" / "test_confusion_matrix.png"
 
-    # Validate artifact existence
-    assert model_path.exists(), f"Expected model file at {model_path}"
-    assert report_path.exists(), f"Expected JSON report at {report_path}"
-    assert cm_path.exists(), f"Expected confusion matrix at {cm_path}"
+    assert model_path.exists()
+    assert report_path.exists()
+    assert cm_path.exists()
 
-    # Validate JSON report structure
+
+def test_json_report_structure(trained_model):
+    tmp_path = trained_model["tmp_path"]
+    report_path = tmp_path / "assets" / "test_report.json"
+
     with open(report_path) as f:
         report = json.load(f)
 
-    assert isinstance(report, dict), "Classification report should be a dict"
-    assert "accuracy" in report, "Report should contain global accuracy field"
+    assert isinstance(report, dict)
+    assert "accuracy" in report
+    assert any(k in report for k in ["0", "airplane", "automobile"])
 
-    # Accuracy should be a valid float (no NaN)
+
+def test_accuracy_value(trained_model):
+    acc = trained_model["acc"]
     assert isinstance(acc, float)
-    assert acc >= 0.0
-    assert acc <= 1.0
+    assert 0.0 <= acc <= 1.0
 
-    # Ensure at least one class was correctly evaluated
-    assert any(k in report for k in ["0", "airplane", "automobile"]), "Expected some class keys in the report"
+
+def test_model_forward_pass(trained_model):
+    model = trained_model["model"]
+    model.eval()
+    x = torch.randn(1, 3, 64, 64)
+    with torch.no_grad():
+        y = model(x)
+    assert y.shape == (1, 10)
