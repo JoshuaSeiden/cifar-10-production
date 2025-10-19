@@ -21,6 +21,7 @@ EXPOSE 8000
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV TORCH_HOME=/tmp/torch
 
 # Run FastAPI with Uvicorn
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
