@@ -32,51 +32,57 @@ def create_dummy_image_bytes():
 
 def post_image(file_bytes, top_k=3):
     files = {"file": ("test.png", file_bytes, "image/png")}
-    return client.post(f"/predict?top_k={top_k}", files=files)
+    data = {"top_k": str(top_k)}  # Form parameters must be strings
+    return client.post("/predict", files=files, data=data)
 
 
 # -----------------------------
 # Predict endpoint tests
 # -----------------------------
 def test_predict_endpoint_valid_image_default_topk():
+    """Test default top_k=3 predictions"""
     img_bytes = create_dummy_image_bytes()
     response = post_image(img_bytes)
     assert response.status_code == 200
     preds = response.json()["predictions"]
-    assert len(preds) == 3  # default top_k
+    assert len(preds) == 3
     for pred in preds:
         assert "class" in pred and "prob" in pred
         assert isinstance(pred["prob"], float)
 
 
-def test_predict_endpoint_valid_image_custom_topk():
+@pytest.mark.parametrize("top_k", [1, 2, 5, 10])
+def test_predict_endpoint_valid_image_custom_topk(top_k):
+    """Test that top_k parameter returns correct number of predictions"""
     img_bytes = create_dummy_image_bytes()
-    response = post_image(img_bytes, top_k=5)
+    response = post_image(img_bytes, top_k=top_k)
     assert response.status_code == 200
     preds = response.json()["predictions"]
-    assert len(preds) == 5
+    assert len(preds) == top_k
+    for pred in preds:
+        assert "class" in pred and "prob" in pred
+        assert isinstance(pred["prob"], float)
 
 
 def test_predict_endpoint_missing_file():
+    """No file uploaded returns 400"""
     response = client.post("/predict", files={})
     assert response.status_code == 400
     assert "detail" in response.json()
 
 
 def test_predict_endpoint_invalid_file():
+    """Non-image file returns 400"""
     files = {"file": ("test.txt", b"notanimage", "text/plain")}
     response = client.post("/predict", files=files)
     assert response.status_code == 400
     assert "detail" in response.json()
 
 
-def test_predict_endpoint_topk_out_of_bounds():
+@pytest.mark.parametrize("invalid_top_k", [0, 11])
+def test_predict_endpoint_topk_out_of_bounds(invalid_top_k):
+    """top_k outside allowed range returns 400"""
     img_bytes = create_dummy_image_bytes()
-
-    # top_k too small
-    response = post_image(img_bytes, top_k=0)
+    response = post_image(img_bytes, top_k=invalid_top_k)
     assert response.status_code == 400
-
-    # top_k too large
-    response = post_image(img_bytes, top_k=11)
-    assert response.status_code == 400
+    assert "detail" in response.json()

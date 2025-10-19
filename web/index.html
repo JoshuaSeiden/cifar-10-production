@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>CIFAR-10 Predictor</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIFAR-10 Classifier</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="container">
+        <h1>CIFAR-10 Image Classifier</h1>
+        <p id="classesNote">Loading classes...</p>
 
-<h1>CIFAR-10 Image Predictor</h1>
+        <input type="file" id="fileInput" accept="image/*">
+        <label for="topKSelect">Top </label>
+        <select id="topKSelect"></select>
+        <span> Predictions</span>
 
-<h2>Valid Classes:</h2>
-<div id="classes">Loading classes...</div>
+        <div class="preview-container">
+            <img id="imgPreview" src="" alt="Image Preview" style="display:none;">
+        </div>
 
-<input type="file" id="imageFile" accept="image/*"><br>
-<button id="predictBtn">Predict</button>
+        <ul id="predictionsList"></ul>
+    </div>
 
-<div id="preview"></div>
-<div id="predictions"></div>
-
-<script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

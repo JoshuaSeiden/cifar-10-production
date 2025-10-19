@@ -1,24 +1,76 @@
 body {
     font-family: Arial, sans-serif;
-    margin: 2rem;
+    background-color: #f8f8f8;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
 }
 
-img {
-    max-width: 200px;
-    margin: 1rem 0;
+.container {
+    background-color: white;
+    padding: 30px;
+    margin-top: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 320px;
 }
 
-#predictions, #classes {
-    margin-top: 1rem;
+h1 {
+    margin-bottom: 10px;
 }
 
-table {
-    border-collapse: collapse;
-    width: 50%;
+#classesNote {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 20px;
 }
 
-th, td {
+input, select, button {
+    margin: 10px 5px;
+    padding: 8px 12px;
+    border-radius: 6px;
     border: 1px solid #ccc;
-    padding: 0.5rem;
-    text-align: left;
+    font-size: 1em;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.preview-container {
+    margin-top: 20px;
+}
+
+#imgPreview {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+#predictionsList {
+    list-style: none;
+    padding: 0;
+}
+
+#predictionsList li {
+    background-color: #f0f0f0;
+    margin: 4px 0;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+label, select, span {
+    font-size: 1em;
+    margin-right: 5px;
 }

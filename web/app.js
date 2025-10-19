@@ -1,79 +1,84 @@
-const predictBtn = document.getElementById("predictBtn");
-const imageFileInput = document.getElementById("imageFile");
-const previewDiv = document.getElementById("preview");
-const predictionsDiv = document.getElementById("predictions");
-const classesDiv = document.getElementById("classes");
+document.addEventListener("DOMContentLoaded", () => {
+    const fileInput = document.getElementById("fileInput");
+    const imgPreview = document.getElementById("imgPreview");
+    const predictionsList = document.getElementById("predictionsList");
+    const topKSelect = document.getElementById("topKSelect");
+    const classesNote = document.getElementById("classesNote");
 
-const API_URL = "http://127.0.0.1:8000";
+    let CLASS_NAMES = [];
 
-// -----------------------------
-// Fetch valid classes
-// -----------------------------
-async function fetchClasses() {
-    try {
-        const response = await fetch(`${API_URL}/classes`);
-        if (!response.ok) throw new Error("Failed to fetch classes");
-        const data = await response.json();
-        classesDiv.innerHTML = data.classes.join(", ");
-    } catch (err) {
-        classesDiv.innerHTML = `Error loading classes: ${err}`;
-    }
-}
+    // Fetch class names from API and populate dropdown & note
+    async function fetchClasses() {
+        try {
+            const res = await fetch("/classes");
+            if (!res.ok) throw new Error("Failed to fetch classes");
+            const data = await res.json();
+            CLASS_NAMES = data.classes;
 
-fetchClasses();
+            classesNote.textContent = `Available classes: ${CLASS_NAMES.join(", ")}`;
 
-// -----------------------------
-// Helpers
-// -----------------------------
-function createFormData(file) {
-    const formData = new FormData();
-    formData.append("file", file);
-    return formData;
-}
-
-// -----------------------------
-// Predict button
-// -----------------------------
-predictBtn.onclick = async () => {
-    const files = imageFileInput.files;
-    if (!files.length) {
-        alert("Please select an image file.");
-        return;
+            topKSelect.innerHTML = "";
+            for (let i = 1; i <= CLASS_NAMES.length; i++) {
+                const opt = document.createElement("option");
+                opt.value = i;
+                opt.textContent = i;
+                topKSelect.appendChild(opt);
+            }
+            topKSelect.value = 1;
+        } catch (err) {
+            classesNote.textContent = `Error loading classes: ${err.message}`;
+        }
     }
 
-    const file = files[0];
-
-    // Show image preview
-    const reader = new FileReader();
-    reader.onload = e => {
-        previewDiv.innerHTML = `<img src="${e.target.result}" alt="preview">`;
-    };
-    reader.readAsDataURL(file);
-
-    // Call predict endpoint
-    try {
-        const response = await fetch(`${API_URL}/predict`, {
-            method: "POST",
-            body: createFormData(file)
-        });
-
-        if (!response.ok) {
-            const err = await response.json();
-            predictionsDiv.innerHTML = `<p style="color:red;">Error: ${err.detail}</p>`;
+    // Preview selected image
+    function previewImage(file) {
+        if (!file) {
+            imgPreview.style.display = "none";
+            predictionsList.innerHTML = "";
             return;
         }
-
-        const data = await response.json();
-        const preds = data.predictions;
-
-        let html = "<h2>Predictions:</h2><table><tr><th>Class</th><th>Probability</th></tr>";
-        preds.forEach(p => {
-            html += `<tr><td>${p.class}</td><td>${(p.prob*100).toFixed(2)}%</td></tr>`;
-        });
-        html += "</table>";
-        predictionsDiv.innerHTML = html;
-
-    } catch (error) {
-        predictionsDiv.innerHTML = `<p style="color:red;">Error: ${error}</p>`;
+        const objectURL = URL.createObjectURL(file);
+        imgPreview.src = objectURL;
+        imgPreview.style.display = "block";
     }
-};
+
+    // Run prediction
+    async function predictImage() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("top_k", topKSelect.value);
+
+        try {
+            const res = await fetch("/predict", { method: "POST", body: formData });
+            if (!res.ok) throw new Error("Prediction failed");
+
+            const data = await res.json();
+            const predictions = data.predictions;
+
+            predictionsList.innerHTML = "";
+            predictions.forEach(p => {
+                const li = document.createElement("li");
+                li.textContent = `${p.class}: ${(p.prob*100).toFixed(2)}%`;
+                predictionsList.appendChild(li);
+            });
+        } catch (err) {
+            predictionsList.innerHTML = `<li style="color:red;">${err.message}</li>`;
+        }
+    }
+
+    // Event listeners
+    fileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        previewImage(file);
+        predictImage(); // Auto-predict on file selection
+    });
+
+    topKSelect.addEventListener("change", () => {
+        if (fileInput.files.length > 0) predictImage();
+    });
+
+    fetchClasses();
+});

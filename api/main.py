@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from api.model_serving import model_server
 from fastapi.staticfiles import StaticFiles
+from fastapi import Form
 
 app = FastAPI(title="CIFAR-10 Image Classifier API")
 
@@ -17,7 +18,7 @@ def health():
 # Prediction endpoint
 # -----------------------------
 @app.post("/predict")
-async def predict(file: UploadFile = File(None), top_k: int = 3):
+async def predict(file: UploadFile = File(None), top_k: int = Form(3)):
     # Check that a file was provided
     if file is None:
         raise HTTPException(status_code=400, detail="No file uploaded")
