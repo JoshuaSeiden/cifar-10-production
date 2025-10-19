@@ -208,4 +208,3 @@ __marimo__/
 
 # Ignore data directory
 data/
-models/*.pth
