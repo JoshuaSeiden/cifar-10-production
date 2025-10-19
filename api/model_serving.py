@@ -9,7 +9,11 @@ class ModelServer:
     def __init__(self, model_path=MODEL_PATH, device=None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = get_resnet50_model(num_classes=10)
-        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+
+        url = "https://huggingface.co/jseiden/cifar10-resnet50-finetuned/resolve/main/cifar_10_resnet50.pth" # get fine tuned weights from huggingface
+        state_dict = torch.hub.load_state_dict_from_url(url, map_location=self.device)
+        self.model.load_state_dict(state_dict)
+
         self.model.to(self.device)
         self.model.eval()
 
