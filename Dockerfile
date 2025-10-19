@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY ./api ./api
 COPY ./src ./src
 COPY ./web ./web
+COPY ./models ./models
 
 # Expose port
 EXPOSE 8000
