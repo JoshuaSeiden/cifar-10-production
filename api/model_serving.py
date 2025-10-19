@@ -1,6 +1,5 @@
 from pathlib import Path
 import torch
-from src.inference import preprocess_image_from_bytes, predict_topk
 from torchvision import models
 import io
 from PIL import Image
