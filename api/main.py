@@ -1,6 +1,6 @@
-# api/main.py
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from api.model_serving import model_server
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="CIFAR-10 Image Classifier API")
 
@@ -42,3 +42,9 @@ async def predict(file: UploadFile = File(None), top_k: int = 3):
 def classes():
     from src.inference import CLASS_NAMES
     return {"classes": CLASS_NAMES}
+
+
+# -----------------------------
+# Serve web UI
+# -----------------------------
+app.mount("/", StaticFiles(directory="web", html=True), name="web")
