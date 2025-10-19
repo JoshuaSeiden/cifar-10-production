@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+torch
+torchvision
+pillow
+flask
+requests
+tqdm
+scikit-learn
+seaborn
+matplotlib
+pytest
+httpx
