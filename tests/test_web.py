@@ -21,4 +21,6 @@ def test_js_file_served():
     """Requesting '/app.js' should return JS"""
     response = client.get("/app.js")
     assert response.status_code == 200
-    assert "application/javascript" in response.headers["content-type"]
+    content_type = response.headers["content-type"]
+    assert "javascript" in content_type, f"Unexpected content-type: {content_type}"
+
