@@ -1,75 +1,44 @@
-# from fastapi import FastAPI, File, UploadFile, Query
-# from fastapi.responses import JSONResponse
-# import os
-# from api.model_serving import load_model
-# from src.inference import preprocess_image_from_bytes, predict_topk
+# api/main.py
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from api.model_serving import model_server
 
-# app = FastAPI(title="CIFAR10 API")
+app = FastAPI(title="CIFAR-10 Image Classifier API")
 
-# MODEL_PATH = os.environ.get("MODEL_PATH", "models/cifar10_resnet50.pth")
-# DEVICE = os.environ.get("DEVICE", "cpu")
 
-# @app.on_event("startup")
-# def load():
-#     global model
-#     # If model file missing, create a minimal placeholder model to keep tests fast
-#     if not os.path.exists(MODEL_PATH):
-#         from src.model import get_resnet50_model
-#         model = get_resnet50_model(num_classes=10)
-#     else:
-#         model = load_model(MODEL_PATH, device=DEVICE)
-
-# @app.get("/health")
-# def health():
-#     return {"status": "ok"}
-
-# @app.post("/predict")
-# async def predict(file: UploadFile = File(...), top_k: int = Query(3, ge=1, le=10)):
-#     try:
-#         contents = await file.read()
-#         tensor = preprocess_image_from_bytes(contents)
-#         preds = predict_topk(model, tensor, device=DEVICE, k=top_k)
-#         return JSONResponse({"predictions": preds})
-#     except Exception as e:
-#         return JSONResponse({"error": str(e)}, status_code=500)
-from fastapi import FastAPI, File, UploadFile, Query
-from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-import os
-from api.model_serving import load_model
-from src.inference import preprocess_image_from_bytes, predict_topk
-
-MODEL_PATH = os.environ.get("MODEL_PATH", "models/cifar10_resnet50.pth")
-DEVICE = os.environ.get("DEVICE", "cpu")
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Load the model at startup and clean up on shutdown."""
-    global model
-    print("Loading model...")
-
-    if not os.path.exists(MODEL_PATH):
-        from src.model import get_resnet50_model
-        model = get_resnet50_model(num_classes=10)
-    else:
-        model = load_model(MODEL_PATH, device=DEVICE)
-
-    print("Model loaded successfully.")
-    yield
-    print("App shutdown complete.")
-
-app = FastAPI(title="CIFAR10 API", lifespan=lifespan)
-
+# -----------------------------
+# Health check
+# -----------------------------
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+
+# -----------------------------
+# Prediction endpoint
+# -----------------------------
 @app.post("/predict")
-async def predict(file: UploadFile = File(...), top_k: int = Query(3, ge=1, le=10)):
+async def predict(file: UploadFile = File(None), top_k: int = 3):
+    # Check that a file was provided
+    if file is None:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+
+    # Validate file type
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    # Run inference
     try:
-        contents = await file.read()
-        tensor = preprocess_image_from_bytes(contents)
-        preds = predict_topk(model, tensor, device=DEVICE, k=top_k)
-        return JSONResponse({"predictions": preds})
+        image_bytes = await file.read()
+        predictions = model_server.predict(image_bytes, top_k=top_k)
+        return {"predictions": predictions}
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
+        raise HTTPException(status_code=400, detail=f"Could not process image: {e}")
+
+
+# -----------------------------
+# Classes endpoint
+# -----------------------------
+@app.get("/classes")
+def classes():
+    from src.inference import CLASS_NAMES
+    return {"classes": CLASS_NAMES}

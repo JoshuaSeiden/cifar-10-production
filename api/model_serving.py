@@ -1,20 +1,22 @@
-from pathlib import Path
 import torch
-from torchvision import models
-import io
-from PIL import Image
+from src.model import get_resnet50_model
+from src.inference import preprocess_image_from_bytes, predict_topk
+from pathlib import Path
 
-def load_model(weights_path: str, device: str = "cpu", num_classes: int = 10):
-    device = torch.device(device)
-    model = models.resnet50(weights=None)
-    model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
-    state = torch.load(weights_path, map_location="cpu")
-    # strip "module." if present
-    new_state = {}
-    for k,v in state.items():
-        nk = k.replace("module.", "") if k.startswith("module.") else k
-        new_state[nk] = v
-    model.load_state_dict(new_state)
-    model.to(device)
-    model.eval()
-    return model
+MODEL_PATH = Path("models/cifar_10_resnet50.pth")
+
+class ModelServer:
+    def __init__(self, model_path=MODEL_PATH, device=None):
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = get_resnet50_model(num_classes=10)
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+        self.model.to(self.device)
+        self.model.eval()
+
+    def predict(self, image_bytes: bytes, top_k: int = 3):
+        tensor = preprocess_image_from_bytes(image_bytes, device=self.device)
+        return predict_topk(self.model, tensor, device=self.device, k=top_k)
+
+
+# Singleton instance for the API
+model_server = ModelServer()
