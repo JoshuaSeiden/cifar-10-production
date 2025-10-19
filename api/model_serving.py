@@ -16,7 +16,7 @@ class ModelServer:
             raise FileNotFoundError(f"Model weights not found at {model_path}")
 
         print(f"Loading local model weights from {model_path}")
-        state_dict = torch.load(model_path, map_location=self.device)
+        state_dict = torch.load(model_path, map_location=self.device, weights_only=False)
         self.model.load_state_dict(state_dict)
         self.model.to(self.device)
         self.model.eval()
