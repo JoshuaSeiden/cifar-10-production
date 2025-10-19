@@ -8,13 +8,14 @@ on:
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # 1 Checkout the repository
+      # 1️ Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️ Set up Python
-      - name: Set up Python 3.10
+      # 2️ Set up Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
@@ -26,26 +27,31 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      # 44 Run tests
+      # 4️ Run tests
       - name: Run PyTest
         run: |
           pytest -v tests
 
-      # 5️ Install git-lfs (needed for pushing large files if using LFS)
+      # 5️ Install Git LFS (optional, needed if using LFS for large files)
       - name: Install Git LFS
         run: |
           sudo apt-get install git-lfs
           git lfs install
 
-      # 6️ Configure HF token
-    - name: Configure Hugging Face token
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: |
-        git config --global user.email "actions@github.com"
-        git config --global user.name "GitHub Actions"
-        git remote add hf https://$HF_TOKEN@huggingface.co/spaces/jseiden/cifar10-fastapi
+      # 6️ Configure Hugging Face token
+      - name: Configure HF token
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git remote add hf https://huggingface.co/spaces/jseiden/cifar10-fastapi || true
 
-    # 7️ Push code to Hugging Face Space
-    - name: Deploy to Hugging Face Space
-      run: git push hf main --force
+      # 7️ Push code to Hugging Face Space
+      - name: Deploy to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git fetch hf
+          git checkout -B main || git checkout main
+          git push hf main --force
