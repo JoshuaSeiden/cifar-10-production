@@ -18,7 +18,7 @@ def trained_model(tmp_path_factory):
 def test_artifacts_created(trained_model):
     tmp_path = trained_model["tmp_path"]
 
-    model_path = tmp_path / "models" / "cifar_10_resnet50.pth"
+    model_path = tmp_path / "models" / "cifar_10_resnet18.pth"
     report_path = tmp_path / "assets" / "test_report.json"
     cm_path = tmp_path / "assets" / "test_confusion_matrix.png"
 

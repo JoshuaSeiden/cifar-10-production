@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 import os
-os.environ['TORCH_HOME'] = '/tmp/torch'  # or './cache' for relative to repo
+os.environ['TORCH_HOME'] = '/tmp/torch'
 
-def get_resnet50_model(num_classes=10):
-    model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
+def get_resnet18_model(num_classes=10):
+    model = models.resnet18(weights=None)
     for p in model.parameters():
         p.requires_grad = True
     in_features = model.fc.in_features

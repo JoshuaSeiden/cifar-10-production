@@ -1,4 +1,6 @@
-# src/train.py
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -6,7 +8,7 @@ from torch.utils.data import random_split, DataLoader, Subset
 import torchvision
 from torchvision import models, transforms
 from tqdm import tqdm
-from src.model import get_resnet50_model
+from src.model import get_resnet18_model
 from pathlib import Path
 from multiprocessing import freeze_support
 from sklearn.metrics import classification_report, confusion_matrix
@@ -23,7 +25,7 @@ CLASS_NAMES = [
     "airplane", "automobile", "bird", "cat", "deer",
     "dog", "frog", "horse", "ship", "truck"
 ]
-DEFAULT_MODEL_PATH = Path("models") / "cifar-10-resnet50.pth"
+DEFAULT_MODEL_PATH = Path("models") / "cifar-10-resnet18.pth"
 DEFAULT_ASSETS_DIR = Path("assets")
 
 
@@ -66,15 +68,14 @@ def evaluate(model, dataloader, device):
 # TRAINING FUNCTION
 # -----------------------------------------------------------------------------#
 def train_model(
-    epochs: int = 20,
-    patience: int = 3,
+    epochs: int = 30,
+    patience: int = 5,
     fast_mode: bool = False,
     output_dir: str | Path = ".",
 ):
     """
     Train CIFAR-10 model.
-    - full mode: trains full ResNet50 with augmentations
-    - fast_mode: lightweight ResNet18 subset for CI/CD
+    - full mode: trains full ResNet18 with augmentations
     """
     set_seed(42)
     output_dir = Path(output_dir)
@@ -116,7 +117,7 @@ def train_model(
         patience = 1
         device = "cpu"  # CI usually has no GPU
 
-        model = get_resnet50_model(num_classes=10).to(device)
+        model = get_resnet18_model(num_classes=10).to(device)
 
 
     # -----------------------------#
@@ -153,7 +154,7 @@ def train_model(
         valloader = DataLoader(valset, batch_size=32, shuffle=False, num_workers=8)
         testloader = DataLoader(testset, batch_size=32, shuffle=False, num_workers=8)
 
-        model = get_resnet50_model(num_classes=10).to(device)
+        model = get_resnet18_model(num_classes=10).to(device)
 
     # -----------------------------#
     # OPTIMIZER & TRAINING
@@ -192,7 +193,7 @@ def train_model(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            torch.save(model.state_dict(), model_dir / "cifar_10_resnet50.pth")
+            torch.save(model.state_dict(), model_dir / "cifar_10_resnet18.pth")
         else:
             patience_counter += 1
             if patience_counter >= patience:
@@ -202,7 +203,7 @@ def train_model(
     # -----------------------------#
     # FINAL EVALUATION
     # -----------------------------#
-    model.load_state_dict(torch.load(model_dir / "cifar_10_resnet50.pth", map_location=device))
+    model.load_state_dict(torch.load(model_dir / "cifar_10_resnet18.pth", map_location=device))
     _, test_acc, preds, labels = evaluate(model, testloader, device)
     print(f"\nFinal Test Accuracy: {test_acc*100:.2f}%")
 
