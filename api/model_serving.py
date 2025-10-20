@@ -1,22 +1,20 @@
+import os
 import torch
 from pathlib import Path
 from src.model import get_resnet18_model
 from src.inference import preprocess_image_from_bytes, predict_topk
-
 
 class ModelServer:
     def __init__(self, device=None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = get_resnet18_model(num_classes=10)
 
-        # Path to local weights inside your project
-        model_path = Path("models/cifar_10_resnet18.pth")
+        # Get absolute path to the weights file from project root
+        project_root = Path(__file__).resolve().parents[1]  # one level up from /api
+        model_path = os.path.join(project_root, "models", "cifar_10_resnet18.pth")
 
-        if not model_path.exists():
-            raise FileNotFoundError(f"Model weights not found at {model_path}")
-
-        print(f"Loading local model weights from {model_path}")
         state_dict = torch.load(model_path, map_location=self.device, weights_only=False)
+
         self.model.load_state_dict(state_dict)
         self.model.to(self.device)
         self.model.eval()
@@ -26,5 +24,5 @@ class ModelServer:
         return predict_topk(self.model, tensor, device=self.device, k=top_k)
 
 
-# Singleton instance for FastAPI
+# Singleton instance for the API
 model_server = ModelServer()
